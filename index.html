@@ -36,6 +36,31 @@
             position: absolute;
             top: 20px;
         }
+        #storage {
+            width: 150px;
+            height: 100px;
+            background-color: #d2b48c;
+            border: 2px solid #8b4513;
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        #qr-code {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            width: 50px;
+            height: 50px;
+        }
+        #credits {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            color: #333;
+            text-decoration: none;
+            font-weight: bold;
+        }
         #stats {
             position: absolute;
             top: 20px;
@@ -60,7 +85,7 @@
         #underground-grid {
             display: grid;
             grid-template-columns: repeat(10, 1fr);
-            grid-template-rows: repeat(20, 30px);
+            grid-template-rows: repeat(30, 30px);
             gap: 2px;
         }
         .tile {
@@ -73,12 +98,39 @@
         .tile.oil {
             background-color: #000;
         }
+        #help-button {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 10px;
+            background: #333;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        #help-popup {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+        #help-popup p {
+            margin: 10px 0;
+        }
     </style>
 </head>
 <body>
     <div id="game">
         <div id="above-ground">
             <div id="oil-rig"></div>
+            <div id="storage"></div>
             <div id="stats">
                 <p>Money: $<span id="money">0</span></p>
                 <p>Oil Stored: <span id="oil">0</span>/<span id="capacity">100</span></p>
@@ -93,25 +145,37 @@
         <div id="underground">
             <div id="underground-grid"></div>
         </div>
+        <img id="qr-code" src="https://res.cloudinary.com/dcsrqennd/image/upload/v1733694622/frame_1_vmv9y3.png" onclick="window.open('https://sites.google.com/view/staticquasar931', '_blank')" alt="QR Code">
+        <a id="credits" href="https://sites.google.com/view/staticquasar931" target="_blank">Made by Static</a>
+        <button id="help-button" onclick="toggleHelp()">Help</button>
+        <div id="help-popup">
+            <p>Welcome to Oil Mining Simulator!</p>
+            <p>Click tiles underground to mine for oil. Upgrade your storage, drill speed, and efficiency to mine faster and store more.</p>
+            <p>The deeper you go, the more valuable the oil but the harder it is to mine.</p>
+            <p>Manage your resources wisely to succeed!</p>
+            <button onclick="toggleHelp()">Close</button>
+        </div>
     </div>
     <script>
         const grid = document.getElementById('underground-grid');
         const moneyEl = document.getElementById('money');
         const oilEl = document.getElementById('oil');
         const capacityEl = document.getElementById('capacity');
+        const helpPopup = document.getElementById('help-popup');
 
         let money = 0;
         let oil = 0;
         let capacity = 100;
         let drillSpeed = 1;
         let efficiency = 1;
+        let depth = 0;
 
         // Initialize grid
         function createGrid() {
-            for (let i = 0; i < 200; i++) {
+            for (let i = 0; i < 300; i++) {
                 const tile = document.createElement('div');
                 tile.classList.add('tile');
-                if (Math.random() < 0.1) {
+                if (Math.random() < 0.1 + depth * 0.01) {
                     tile.classList.add('oil');
                 }
                 tile.addEventListener('click', () => mineTile(tile));
@@ -122,13 +186,30 @@
         function mineTile(tile) {
             if (!tile.classList.contains('oil')) return;
             if (oil >= capacity) {
-                alert('Storage is full! Upgrade your capacity.');
+                alertInGame('Storage is full! Upgrade your capacity.');
                 return;
             }
             tile.classList.remove('oil');
-            oil += drillSpeed * efficiency;
-            money += drillSpeed * 10;
-            updateStats();
+            setTimeout(() => {
+                oil += drillSpeed * efficiency;
+                money += drillSpeed * 10 + depth * 5;
+                updateStats();
+            }, 500 * (1 / drillSpeed));
+        }
+
+        function alertInGame(message) {
+            const alertBox = document.createElement('div');
+            alertBox.style.position = 'absolute';
+            alertBox.style.top = '50%';
+            alertBox.style.left = '50%';
+            alertBox.style.transform = 'translate(-50%, -50%)';
+            alertBox.style.background = 'white';
+            alertBox.style.padding = '20px';
+            alertBox.style.borderRadius = '10px';
+            alertBox.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.3)';
+            alertBox.innerText = message;
+            document.body.appendChild(alertBox);
+            setTimeout(() => alertBox.remove(), 2000);
         }
 
         function updateStats() {
@@ -148,10 +229,14 @@
                 efficiency += 0.5;
                 money -= 150;
             } else {
-                alert('Not enough money!');
+                alertInGame('Not enough money!');
                 return;
             }
             updateStats();
+        }
+
+        function toggleHelp() {
+            helpPopup.style.display = helpPopup.style.display === 'block' ? 'none' : 'block';
         }
 
         createGrid();
@@ -165,6 +250,7 @@
                 capacity,
                 drillSpeed,
                 efficiency,
+                depth
             };
             localStorage.setItem('oilMiningSave', JSON.stringify(saveData));
         });
@@ -178,6 +264,7 @@
                 capacity = saveData.capacity;
                 drillSpeed = saveData.drillSpeed;
                 efficiency = saveData.efficiency;
+                depth = saveData.depth;
                 updateStats();
             }
         });
