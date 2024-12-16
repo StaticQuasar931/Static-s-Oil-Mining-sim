@@ -87,14 +87,14 @@
         }
         #underground-grid {
             display: grid;
-            grid-template-columns: repeat(10, 1fr);
+            grid-template-columns: repeat(20, 1fr);
             grid-gap: 2px;
             width: 100%;
         }
         .depth-level {
             padding: 10px 0;
             display: grid;
-            grid-template-columns: repeat(10, 1fr);
+            grid-template-columns: repeat(20, 1fr);
             grid-gap: 2px;
         }
         .tile {
@@ -105,7 +105,7 @@
             cursor: pointer;
         }
         .tile.mined {
-            background-color: #8b4513;
+            background-color: #a0522d;
         }
         .tile.oil {
             background-color: #000;
@@ -113,6 +113,10 @@
         }
         .tile.revealed {
             visibility: visible;
+        }
+        .tile.rare {
+            background-color: gold;
+            visibility: hidden;
         }
         #help-button {
             position: absolute;
@@ -176,7 +180,7 @@
         <div id="help-popup">
             <p>Welcome to Oil Mining Simulator!</p>
             <p>Click tiles underground to mine for oil. Upgrade your storage, drill speed, and efficiency to mine faster and store more.</p>
-            <p>The deeper you go, the more valuable the oil but the harder it is to mine.</p>
+            <p>The deeper you go, the more valuable the oil but the harder it is to mine. Rare resources can also be discovered!</p>
             <p>Manage your resources wisely to succeed!</p>
             <button onclick="toggleHelp()">Close</button>
         </div>
@@ -201,10 +205,12 @@
             depthLevel.classList.add('depth-level');
             depthLevel.style.backgroundColor = depth % 2 === 0 ? '#6e4a37' : '#5c4033';
 
-            for (let i = 0; i < 10; i++) {
+            for (let i = 0; i < 20; i++) {
                 const tile = document.createElement('div');
                 tile.classList.add('tile');
                 tile.addEventListener('click', () => mineTile(tile));
+                if (Math.random() < 0.15) tile.classList.add('oil');
+                if (Math.random() < 0.01) tile.classList.add('rare');
                 depthLevel.appendChild(tile);
             }
             grid.appendChild(depthLevel);
@@ -213,14 +219,12 @@
         function mineTile(tile) {
             if (!tile.classList.contains('mined')) {
                 tile.classList.add('mined');
-
-                if (Math.random() < 0.2) {
-                    tile.classList.add('oil');
-                    tile.classList.add('revealed');
-                }
+                tile.classList.remove('rare', 'oil');
 
                 if (tile.classList.contains('oil')) {
                     collectOil();
+                } else if (tile.classList.contains('rare')) {
+                    collectRare();
                 }
             } else {
                 alertInGame('Tile already mined!');
@@ -234,6 +238,12 @@
             }
             oil += drillSpeed * efficiency;
             money += drillSpeed * 10;
+            updateStats();
+        }
+
+        function collectRare() {
+            money += 500;
+            alertInGame('You found a rare resource! +$500');
             updateStats();
         }
 
