@@ -1,1 +1,186 @@
-hiya
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oil Mining Simulator</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+        }
+        #game {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        #above-ground, #underground {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+        #above-ground {
+            background-color: #87ceeb;
+        }
+        #underground {
+            background-color: #8b4513;
+            overflow: hidden;
+        }
+        #oil-rig {
+            width: 100px;
+            height: 150px;
+            background-color: #333;
+            position: absolute;
+            top: 20px;
+        }
+        #stats {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+        }
+        #stats p {
+            margin: 5px 0;
+        }
+        #upgrade-area {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+        }
+        #underground-grid {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            grid-template-rows: repeat(20, 30px);
+            gap: 2px;
+        }
+        .tile {
+            width: 30px;
+            height: 30px;
+            background-color: #5c4033;
+            border: 1px solid #4e3525;
+            cursor: pointer;
+        }
+        .tile.oil {
+            background-color: #000;
+        }
+    </style>
+</head>
+<body>
+    <div id="game">
+        <div id="above-ground">
+            <div id="oil-rig"></div>
+            <div id="stats">
+                <p>Money: $<span id="money">0</span></p>
+                <p>Oil Stored: <span id="oil">0</span>/<span id="capacity">100</span></p>
+            </div>
+            <div id="upgrade-area">
+                <p>Upgrades:</p>
+                <button onclick="upgrade('capacity')">Increase Storage ($50)</button>
+                <button onclick="upgrade('drillSpeed')">Drill Speed ($100)</button>
+                <button onclick="upgrade('efficiency')">Efficiency ($150)</button>
+            </div>
+        </div>
+        <div id="underground">
+            <div id="underground-grid"></div>
+        </div>
+    </div>
+    <script>
+        const grid = document.getElementById('underground-grid');
+        const moneyEl = document.getElementById('money');
+        const oilEl = document.getElementById('oil');
+        const capacityEl = document.getElementById('capacity');
+
+        let money = 0;
+        let oil = 0;
+        let capacity = 100;
+        let drillSpeed = 1;
+        let efficiency = 1;
+
+        // Initialize grid
+        function createGrid() {
+            for (let i = 0; i < 200; i++) {
+                const tile = document.createElement('div');
+                tile.classList.add('tile');
+                if (Math.random() < 0.1) {
+                    tile.classList.add('oil');
+                }
+                tile.addEventListener('click', () => mineTile(tile));
+                grid.appendChild(tile);
+            }
+        }
+
+        function mineTile(tile) {
+            if (!tile.classList.contains('oil')) return;
+            if (oil >= capacity) {
+                alert('Storage is full! Upgrade your capacity.');
+                return;
+            }
+            tile.classList.remove('oil');
+            oil += drillSpeed * efficiency;
+            money += drillSpeed * 10;
+            updateStats();
+        }
+
+        function updateStats() {
+            moneyEl.textContent = money;
+            oilEl.textContent = oil;
+            capacityEl.textContent = capacity;
+        }
+
+        function upgrade(type) {
+            if (type === 'capacity' && money >= 50) {
+                capacity += 50;
+                money -= 50;
+            } else if (type === 'drillSpeed' && money >= 100) {
+                drillSpeed += 1;
+                money -= 100;
+            } else if (type === 'efficiency' && money >= 150) {
+                efficiency += 0.5;
+                money -= 150;
+            } else {
+                alert('Not enough money!');
+                return;
+            }
+            updateStats();
+        }
+
+        createGrid();
+        updateStats();
+
+        // Save Progress
+        window.addEventListener('beforeunload', () => {
+            const saveData = {
+                money,
+                oil,
+                capacity,
+                drillSpeed,
+                efficiency,
+            };
+            localStorage.setItem('oilMiningSave', JSON.stringify(saveData));
+        });
+
+        // Load Progress
+        window.addEventListener('load', () => {
+            const saveData = JSON.parse(localStorage.getItem('oilMiningSave'));
+            if (saveData) {
+                money = saveData.money;
+                oil = saveData.oil;
+                capacity = saveData.capacity;
+                drillSpeed = saveData.drillSpeed;
+                efficiency = saveData.efficiency;
+                updateStats();
+            }
+        });
+    </script>
+</body>
+</html>
