@@ -99,6 +99,9 @@
         .tile.oil {
             background-color: #000;
         }
+        .tile.rare {
+            background-color: gold;
+        }
         #help-button {
             position: absolute;
             bottom: 150px;
@@ -147,9 +150,10 @@
             </div>
             <div id="upgrade-area">
                 <p>Upgrades:</p>
-                <button onclick="upgrade('capacity')">Increase Storage ($50)</button>
-                <button onclick="upgrade('drillSpeed')">Drill Speed ($100)</button>
-                <button onclick="upgrade('efficiency')">Efficiency ($150)</button>
+                <button onclick="upgrade('capacity')">Increase Storage</button>
+                <button onclick="upgrade('drillSpeed')">Drill Speed</button>
+                <button onclick="upgrade('efficiency')">Efficiency</button>
+                <button onclick="upgrade('rarity')">Find Rare Resources</button>
             </div>
         </div>
         <div id="underground">
@@ -162,6 +166,7 @@
             <p>Welcome to Oil Mining Simulator!</p>
             <p>Click tiles underground to mine for oil. Upgrade your storage, drill speed, and efficiency to mine faster and store more.</p>
             <p>The deeper you go, the more valuable the oil but the harder it is to mine.</p>
+            <p>Rare resources appear as you progress—upgrade rarity to improve chances.</p>
             <p>Manage your resources wisely to succeed!</p>
             <button onclick="toggleHelp()">Close</button>
         </div>
@@ -180,14 +185,18 @@
         let drillSpeed = 1;
         let efficiency = 1;
         let depth = 0;
+        let rarity = 0.1; // Chance for rare tiles
 
         // Initialize grid
         function createGrid() {
+            grid.innerHTML = '';
             for (let i = 0; i < 300; i++) {
                 const tile = document.createElement('div');
                 tile.classList.add('tile');
                 if (Math.random() < 0.1 + depth * 0.01) {
                     tile.classList.add('oil');
+                } else if (Math.random() < rarity) {
+                    tile.classList.add('rare');
                 }
                 tile.addEventListener('click', () => mineTile(tile));
                 grid.appendChild(tile);
@@ -195,15 +204,28 @@
         }
 
         function mineTile(tile) {
-            if (!tile.classList.contains('oil')) return;
+            if (tile.classList.contains('oil')) {
+                collectResource(tile, drillSpeed * efficiency, 'oil');
+            } else if (tile.classList.contains('rare')) {
+                collectResource(tile, drillSpeed * 50, 'rare resource');
+            } else {
+                alertInGame('This tile is empty!');
+            }
+        }
+
+        function collectResource(tile, amount, type) {
             if (oil >= capacity) {
                 alertInGame('Storage is full! Upgrade your capacity.');
                 return;
             }
-            tile.classList.remove('oil');
+            tile.classList.remove('oil', 'rare');
             setTimeout(() => {
-                oil += drillSpeed * efficiency;
-                money += drillSpeed * 10 + depth * 5;
+                if (type === 'oil') {
+                    oil += amount;
+                    money += amount * 10;
+                } else if (type === 'rare resource') {
+                    money += amount * 100;
+                }
                 updateStats();
             }, 500 * (1 / drillSpeed));
         }
@@ -231,15 +253,18 @@
         }
 
         function upgrade(type) {
-            if (type === 'capacity' && money >= 50) {
+            if (type === 'capacity' && money >= capacity * 2) {
                 capacity += 50;
-                money -= 50;
-            } else if (type === 'drillSpeed' && money >= 100) {
+                money -= capacity * 2;
+            } else if (type === 'drillSpeed' && money >= drillSpeed * 100) {
                 drillSpeed += 1;
-                money -= 100;
-            } else if (type === 'efficiency' && money >= 150) {
-                efficiency += 0.5;
-                money -= 150;
+                money -= drillSpeed * 100;
+            } else if (type === 'efficiency' && money >= efficiency * 150) {
+                efficiency += 0.1;
+                money -= efficiency * 150;
+            } else if (type === 'rarity' && money >= 200) {
+                rarity += 0.05;
+                money -= 200;
             } else {
                 alertInGame('Not enough money!');
                 return;
@@ -255,16 +280,19 @@
         updateStats();
 
         // Save Progress
-        window.addEventListener('beforeunload', () => {
+        window.addEventListener('beforeunload', (event) => {
             const saveData = {
                 money,
                 oil,
                 capacity,
                 drillSpeed,
                 efficiency,
-                depth
+                depth,
+                rarity
             };
             localStorage.setItem('oilMiningSave', JSON.stringify(saveData));
+            event.preventDefault();
+            event.returnValue = 'Your progress may not be saved. Do you want to leave?';
         });
 
         // Load Progress
@@ -277,6 +305,7 @@
                 drillSpeed = saveData.drillSpeed;
                 efficiency = saveData.efficiency;
                 depth = saveData.depth;
+                rarity = saveData.rarity;
                 updateStats();
             }
         });
