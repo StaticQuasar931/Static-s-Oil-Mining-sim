@@ -50,8 +50,9 @@
             position: absolute;
             bottom: 20px;
             left: 20px;
-            width: 50px;
-            height: 50px;
+            width: 100px;
+            height: 100px;
+            cursor: pointer;
         }
         #credits {
             position: absolute;
@@ -100,9 +101,8 @@
         }
         #help-button {
             position: absolute;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
+            bottom: 150px;
+            right: 20px;
             padding: 10px;
             background: #333;
             color: white;
@@ -124,13 +124,23 @@
         #help-popup p {
             margin: 10px 0;
         }
+        #storage-fill {
+            height: 0;
+            width: 100%;
+            background: #ffcc00;
+            position: absolute;
+            bottom: 0;
+            transition: height 0.3s;
+        }
     </style>
 </head>
 <body>
     <div id="game">
         <div id="above-ground">
             <div id="oil-rig"></div>
-            <div id="storage"></div>
+            <div id="storage">
+                <div id="storage-fill"></div>
+            </div>
             <div id="stats">
                 <p>Money: $<span id="money">0</span></p>
                 <p>Oil Stored: <span id="oil">0</span>/<span id="capacity">100</span></p>
@@ -161,6 +171,7 @@
         const moneyEl = document.getElementById('money');
         const oilEl = document.getElementById('oil');
         const capacityEl = document.getElementById('capacity');
+        const storageFill = document.getElementById('storage-fill');
         const helpPopup = document.getElementById('help-popup');
 
         let money = 0;
@@ -216,6 +227,7 @@
             moneyEl.textContent = money;
             oilEl.textContent = oil;
             capacityEl.textContent = capacity;
+            storageFill.style.height = `${(oil / capacity) * 100}%`;
         }
 
         function upgrade(type) {
